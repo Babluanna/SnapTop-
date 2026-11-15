@@ -1,0 +1,24 @@
+<svg width="512" height="512" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="snaptopPrism" x1="3" y1="33" x2="33" y2="3" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7C3AED" />
+      <stop offset="52%" stop-color="#A855F7" />
+      <stop offset="100%" stop-color="#EC4899" />
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="32" height="32" rx="9.5" fill="url(#snaptopPrism)" />
+  <path
+    d="M23.5 11.5H15.5C13.2909 11.5 11.5 13.2909 11.5 15.5C11.5 17.7091 13.2909 19.5 15.5 19.5H20.5C22.7091 19.5 24.5 21.2909 24.5 23.5C24.5 25.7091 22.7091 27.5 20.5 27.5H12.5"
+    stroke="white"
+    stroke-width="2.8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M15.5 8.5L18 6L20.5 8.5"
+    stroke="white"
+    stroke-width="2.4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

@@ -65,6 +65,7 @@ import { EditProfileModal } from './components/EditProfileModal';
 import { NoteModal } from './components/NoteModal';
 import { PullToRefresh } from './components/PullToRefresh';
 import { TrendingTopicsCard } from './components/TrendingTopicsCard';
+import { OfflineIndicator, PWAInstallButton } from './components/PWAControls';
 
 function mapPostDoc(d: QueryDocumentSnapshot<DocumentData>): PostItem {
   const data = d.data();
@@ -1534,6 +1535,9 @@ export default function App() {
 
         {/* Bottom Sidebar Utilities */}
         <div className="space-y-1.5 pt-4 border-t border-zinc-200/70 dark:border-zinc-800/80">
+          <div className="hidden xl:block pb-1">
+            <PWAInstallButton />
+          </div>
           <div className="px-2 py-1.5 flex items-center justify-center xl:justify-between gap-2">
             <div className="hidden xl:flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
               <Globe className="w-4 h-4" />
@@ -1587,7 +1591,8 @@ export default function App() {
             <span className="font-display text-lg font-bold tracking-[-0.02em]">{t.appName}</span>
           </button>
 
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center gap-1">
+            <PWAInstallButton compact />
             <button
               type="button"
               onClick={() => setActiveTab('notifications')}
@@ -2155,6 +2160,8 @@ export default function App() {
           onDeleteNote={handleDeleteNote}
         />
       )}
+
+      <OfflineIndicator />
     </div>
   );
 }

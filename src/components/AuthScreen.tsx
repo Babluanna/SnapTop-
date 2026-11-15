@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   createUserWithEmailAndPassword,
+  getRedirectResult,
   reload,
   sendEmailVerification,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
   updateProfile,
   User,
 } from 'firebase/auth';
@@ -13,6 +15,7 @@ import { auth, googleProvider } from '../lib/firebase';
 import { LANGUAGE_LABELS, TRANSLATIONS } from '../i18n/translations';
 import type { Language, ThemeMode } from '../types';
 import { SnapTopLogo } from './BrandMark';
+import { PWAInstallButton } from './PWAControls';
 
 interface AuthScreenProps {
   language: Language;
@@ -41,6 +44,44 @@ export function AuthScreen({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [infoMsg, setInfoMsg] = useState<string | null>(null);
 
+  const formatAuthError = (err: unknown, fallback: string): string => {
+    const code = (err as { code?: string })?.code || '';
+    const host = typeof window !== 'undefined' ? window.location.hostname : 'this domain';
+    switch (code) {
+      case 'auth/unauthorized-domain':
+        return `Add "${host}" to Firebase Console -> Authentication -> Settings -> Authorized domains to enable Google sign-in here, or sign in with Email/Password below.`;
+      case 'auth/operation-not-allowed':
+        return t.auth.emailAuthDisabledHint;
+      case 'auth/operation-not-supported-in-this-environment':
+        return 'Google popup sign-in is blocked in this embedded browser/WebView. Open in Chrome, use a PWABuilder TWA APK, or sign in with Email/Password below.';
+      case 'auth/popup-closed-by-user':
+      case 'auth/cancelled-popup-request':
+        return 'Sign-in window was closed before completing. Please try again.';
+      case 'auth/invalid-credential':
+      case 'auth/wrong-password':
+      case 'auth/user-not-found':
+        return 'Incorrect email or password. Double-check your credentials or create a new account.';
+      case 'auth/email-already-in-use':
+        return 'An account with this email already exists. Switch to Sign In above.';
+      case 'auth/weak-password':
+        return 'Password should be at least 6 characters long.';
+      case 'auth/invalid-email':
+        return 'Please enter a valid email address.';
+      case 'auth/too-many-requests':
+        return 'Too many attempts. Please wait a minute before trying again.';
+      case 'auth/network-request-failed':
+        return 'Network error. Please check your internet connection and try again.';
+      default:
+        return err instanceof Error && err.message ? err.message : fallback;
+    }
+  };
+
+  useEffect(() => {
+    void getRedirectResult(auth).catch((err: unknown) => {
+      setErrorMsg(formatAuthError(err, 'Unable to complete Google sign-in.'));
+    });
+  }, []);
+
   const handleGoogleLogin = async () => {
     setErrorMsg(null);
     setInfoMsg(null);
@@ -49,14 +90,15 @@ export function AuthScreen({
       await signInWithPopup(auth, googleProvider);
     } catch (err: unknown) {
       const code = (err as { code?: string })?.code || '';
-      if (code === 'auth/unauthorized-domain') {
-        const host = typeof window !== 'undefined' ? window.location.hostname : 'this domain';
-        setErrorMsg(
-          `Add "${host}" to Firebase Console -> Authentication -> Settings -> Authorized domains to enable Google sign-in here, or sign in with Email/Password below.`
-        );
+      if (code === 'auth/popup-blocked') {
+        try {
+          await signInWithRedirect(auth, googleProvider);
+          return;
+        } catch (redirectErr: unknown) {
+          setErrorMsg(formatAuthError(redirectErr, 'Unable to sign in with Google.'));
+        }
       } else {
-        const msg = err instanceof Error ? err.message : 'Unable to sign in with Google.';
-        setErrorMsg(msg);
+        setErrorMsg(formatAuthError(err, 'Unable to sign in with Google.'));
       }
     } finally {
       setLoading(false);
@@ -88,12 +130,7 @@ export function AuthScreen({
         await signInWithEmailAndPassword(auth, email.trim(), password);
       }
     } catch (err: unknown) {
-      const code = (err as { code?: string })?.code || '';
-      if (code === 'auth/operation-not-allowed') {
-        setErrorMsg(t.auth.emailAuthDisabledHint);
-      } else {
-        setErrorMsg(err instanceof Error ? err.message : 'Authentication failed.');
-      }
+      setErrorMsg(formatAuthError(err, 'Authentication failed.'));
     } finally {
       setLoading(false);
     }
@@ -144,6 +181,7 @@ export function AuthScreen({
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            <PWAInstallButton compact />
             <div className="flex items-center gap-1.5 rounded-full bg-zinc-100 dark:bg-zinc-900 px-3 py-1.5 border border-zinc-200/70 dark:border-zinc-800">
               <Globe className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400" />
               <select
@@ -172,7 +210,7 @@ export function AuthScreen({
         </div>
       </header>
 
-      <main className="flex-1 w-full max-w-5xl mx-auto px-5 py-8 md:py-12 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+      <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-5 py-4 sm:py-8 md:py-12 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
         {/* Left: Clean Apple-inspired product overview (zero fake photos) */}
         <section className="hidden lg:block lg:col-span-6 space-y-6">
           <div className="w-14 h-14 rounded-2xl shadow-lg shadow-violet-500/20 flex items-center justify-center">
@@ -226,8 +264,8 @@ export function AuthScreen({
 
         {/* Right: iOS-polished Auth Card */}
         <section className="lg:col-span-6 w-full max-w-[420px] mx-auto">
-          <div className="rounded-[28px] border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/90 p-6 sm:p-8 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.08)] dark:shadow-none">
-            <div className="lg:hidden mb-6 text-center space-y-2">
+          <div className="rounded-[28px] border border-zinc-200/80 dark:border-zinc-800 bg-white dark:bg-zinc-900/90 p-5 sm:p-8 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.08)] dark:shadow-none">
+            <div className="lg:hidden mb-4 text-center space-y-1.5">
               <div className="inline-flex">
                 <SnapTopLogo size={44} />
               </div>
