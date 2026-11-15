@@ -1,0 +1,822 @@
+{
+  "entities": {
+    "PublicProfile": {
+      "title": "PublicProfile",
+      "description": "Public creator profile visible across SnapTop feeds, search, and profiles without PII.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "username": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 30,
+          "pattern": "^[a-zA-Z0-9_.]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "bio": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 240
+        },
+        "avatarUrl": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 150000
+        },
+        "website": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 200
+        },
+        "followersCount": {
+          "type": "number"
+        },
+        "followingCount": {
+          "type": "number"
+        },
+        "postsCount": {
+          "type": "number"
+        },
+        "isPublic": {
+          "type": "boolean"
+        },
+        "isVerified": {
+          "type": "boolean",
+          "description": "Whether the user has been manually verified."
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "username",
+        "displayName",
+        "bio",
+        "avatarUrl",
+        "website",
+        "followersCount",
+        "followingCount",
+        "postsCount",
+        "isPublic",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "PrivateUser": {
+      "title": "PrivateUser",
+      "description": "Private user account data and preferences isolated from public queries.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "minLength": 3,
+          "maxLength": 254
+        },
+        "language": {
+          "type": "string",
+          "enum": ["en", "hi", "te"]
+        },
+        "theme": {
+          "type": "string",
+          "enum": ["light", "dark"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "language", "theme", "createdAt", "updatedAt"]
+    },
+    "Post": {
+      "title": "Post",
+      "description": "Photo or video post or vertical reel published to SnapTop.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorUsername": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 30
+        },
+        "authorDisplayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "authorAvatar": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 150000
+        },
+        "mediaUrl": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 550000
+        },
+        "mediaType": {
+          "type": "string",
+          "enum": ["image", "video"]
+        },
+        "isReel": {
+          "type": "boolean"
+        },
+        "caption": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 2200
+        },
+        "location": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 100
+        },
+        "audioTitle": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 120
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public"]
+        },
+        "likesCount": {
+          "type": "number"
+        },
+        "commentsCount": {
+          "type": "number"
+        },
+        "sharesCount": {
+          "type": "number"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "authorId",
+        "authorUsername",
+        "authorDisplayName",
+        "authorAvatar",
+        "mediaUrl",
+        "mediaType",
+        "isReel",
+        "caption",
+        "location",
+        "audioTitle",
+        "visibility",
+        "likesCount",
+        "commentsCount",
+        "sharesCount",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "Comment on a SnapTop post or reel.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "postId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorUsername": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 30
+        },
+        "authorAvatar": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 150000
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "postId",
+        "authorId",
+        "authorUsername",
+        "authorAvatar",
+        "text",
+        "visibility",
+        "createdAt"
+      ]
+    },
+    "PostLike": {
+      "title": "PostLike",
+      "description": "User like record keyed by postId_userId.",
+      "type": "object",
+      "properties": {
+        "postId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["postId", "userId", "createdAt"]
+    },
+    "SavedPost": {
+      "title": "SavedPost",
+      "description": "User bookmarked post or reel.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "postId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "mediaUrl": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 550000
+        },
+        "mediaType": {
+          "type": "string",
+          "enum": ["image", "video"]
+        },
+        "caption": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 2200
+        },
+        "authorUsername": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 30
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "userId",
+        "postId",
+        "mediaUrl",
+        "mediaType",
+        "caption",
+        "authorUsername",
+        "createdAt"
+      ]
+    },
+    "Story": {
+      "title": "Story",
+      "description": "Ephemeral 24-hour story published by a creator.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorUsername": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 30
+        },
+        "authorAvatar": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 150000
+        },
+        "mediaUrl": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 550000
+        },
+        "mediaType": {
+          "type": "string",
+          "enum": ["image", "video"]
+        },
+        "caption": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 200
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "authorId",
+        "authorUsername",
+        "authorAvatar",
+        "mediaUrl",
+        "mediaType",
+        "caption",
+        "visibility",
+        "createdAt"
+      ]
+    },
+    "Follow": {
+      "title": "Follow",
+      "description": "Directed follow relationship keyed by followerId_followingId.",
+      "type": "object",
+      "properties": {
+        "followerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "followingId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["followerId", "followingId", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Activity notification delivered to a user.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "recipientId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "actorId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "actorUsername": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 30
+        },
+        "actorAvatar": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 150000
+        },
+        "type": {
+          "type": "string",
+          "enum": ["like", "comment", "follow", "message", "share"]
+        },
+        "postId": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "postThumb": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 550000
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 240
+        },
+        "isRead": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "recipientId",
+        "actorId",
+        "actorUsername",
+        "actorAvatar",
+        "type",
+        "postId",
+        "postThumb",
+        "text",
+        "isRead",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Conversation": {
+      "title": "Conversation",
+      "description": "Direct messaging conversation between two users.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 260,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "participantIds": {
+          "type": "array"
+        },
+        "participantA": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "participantB": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "participantAName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "participantAAvatar": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 150000
+        },
+        "participantBName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "participantBAvatar": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 150000
+        },
+        "lastMessage": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 1000
+        },
+        "lastSenderId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "participantIds",
+        "participantA",
+        "participantB",
+        "participantAName",
+        "participantAAvatar",
+        "participantBName",
+        "participantBAvatar",
+        "lastMessage",
+        "lastSenderId",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Direct message inside a conversation.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "conversationId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 260,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "senderId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "participantIds": {
+          "type": "array"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "sharedPostId": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "conversationId",
+        "senderId",
+        "participantIds",
+        "text",
+        "sharedPostId",
+        "createdAt"
+      ]
+    },
+    "MediaFile": {
+      "title": "MediaFile",
+      "description": "Metadata header for chunked video uploads stored in Firestore.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "mimeType": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 100
+        },
+        "totalChunks": {
+          "type": "number"
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "ownerId", "mimeType", "totalChunks", "visibility", "createdAt"]
+    },
+    "MediaChunk": {
+      "title": "MediaChunk",
+      "description": "Base64 media chunk belonging to a MediaFile.",
+      "type": "object",
+      "properties": {
+        "mediaId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "index": {
+          "type": "number"
+        },
+        "data": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 700000
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["mediaId", "ownerId", "index", "data", "visibility", "createdAt"]
+    },
+    "Note": {
+      "title": "Note",
+      "description": "Short 60-character status note shown above a user's avatar in Messages and Profile.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "username": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 30,
+          "pattern": "^[a-zA-Z0-9_.]+$"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "avatarUrl": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 150000
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "visibility": {
+          "type": "string",
+          "enum": ["public"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["userId", "username", "displayName", "avatarUrl", "text", "visibility", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/publicProfiles/{userId}": {
+      "schema": { "$ref": "#/entities/PublicProfile" },
+      "description": "Public creator profiles without PII."
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/PrivateUser" },
+      "description": "Private user PII and preferences strictly owned by the user."
+    },
+    "/posts/{postId}": {
+      "schema": { "$ref": "#/entities/Post" },
+      "description": "Public posts and vertical reels."
+    },
+    "/posts/{postId}/comments/{commentId}": {
+      "schema": { "$ref": "#/entities/Comment" },
+      "description": "Comments under a Firestore post."
+    },
+    "/postLikes/{likeId}": {
+      "schema": { "$ref": "#/entities/PostLike" },
+      "description": "Like records keyed by postId_userId."
+    },
+    "/savedPosts/{saveId}": {
+      "schema": { "$ref": "#/entities/SavedPost" },
+      "description": "Bookmarked posts keyed by userId_postId."
+    },
+    "/stories/{storyId}": {
+      "schema": { "$ref": "#/entities/Story" },
+      "description": "Public creator stories."
+    },
+    "/follows/{followId}": {
+      "schema": { "$ref": "#/entities/Follow" },
+      "description": "Follow graph edges keyed by followerId_followingId."
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "User activity notifications."
+    },
+    "/conversations/{conversationId}": {
+      "schema": { "$ref": "#/entities/Conversation" },
+      "description": "1-on-1 direct message threads."
+    },
+    "/conversations/{conversationId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/Message" },
+      "description": "Real-time direct messages inside a thread."
+    },
+    "/mediaFiles/{mediaId}": {
+      "schema": { "$ref": "#/entities/MediaFile" },
+      "description": "Chunked media file metadata."
+    },
+    "/mediaFiles/{mediaId}/chunks/{chunkId}": {
+      "schema": { "$ref": "#/entities/MediaChunk" },
+      "description": "Media payload chunks for fast video playback."
+    },
+    "/notes/{userId}": {
+      "schema": { "$ref": "#/entities/Note" },
+      "description": "Short public status notes displayed in Profile and Messages."
+    }
+  }
+}
