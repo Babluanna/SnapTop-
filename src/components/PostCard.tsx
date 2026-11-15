@@ -63,10 +63,12 @@ export function PostCard({
   const [draftCaption, setDraftCaption] = useState(post.caption);
   const [commentInput, setCommentInput] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const lastTapRef = useRef<number>(0);
   const tapTimerRef = useRef<number | null>(null);
+  const burstTimerRef = useRef<number | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -79,6 +81,9 @@ export function PostCard({
     return () => {
       if (tapTimerRef.current !== null) {
         window.clearTimeout(tapTimerRef.current);
+      }
+      if (burstTimerRef.current !== null) {
+        window.clearTimeout(burstTimerRef.current);
       }
     };
   }, []);
@@ -102,6 +107,16 @@ export function PostCard({
   }, [menuOpen]);
 
   const isOwn = post.authorId === currentUid;
+  const sharesCount = post.sharesCount ?? 0;
+
+  const runAction = async (fn: () => Promise<void>, fallbackMsg: string) => {
+    setActionError(null);
+    try {
+      await fn();
+    } catch (err: unknown) {
+      setActionError(err instanceof Error ? err.message : fallbackMsg);
+    }
+  };
 
   const handleMediaTap = () => {
     const now = Date.now();
@@ -111,10 +126,16 @@ export function PostCard({
         tapTimerRef.current = null;
       }
       if (!isLiked) {
-        void onToggleLike(post);
+        void runAction(() => onToggleLike(post), 'Unable to update like.');
       }
       setBurstHeart(true);
-      window.setTimeout(() => setBurstHeart(false), 750);
+      if (burstTimerRef.current !== null) {
+        window.clearTimeout(burstTimerRef.current);
+      }
+      burstTimerRef.current = window.setTimeout(() => {
+        setBurstHeart(false);
+        burstTimerRef.current = null;
+      }, 750);
     } else if (post.mediaType === 'video') {
       tapTimerRef.current = window.setTimeout(() => {
         if (videoRef.current) {
@@ -201,7 +222,12 @@ export function PostCard({
           {!isOwn && (
             <button
               type="button"
-              onClick={() => onToggleFollow(post.authorId, post.authorUsername, post.authorAvatar)}
+              onClick={() =>
+                void runAction(
+                  () => onToggleFollow(post.authorId, post.authorUsername, post.authorAvatar),
+                  'Unable to update follow status.'
+                )
+              }
               className={`min-h-[34px] px-3.5 rounded-full text-xs font-semibold transition-all active:scale-[0.97] whitespace-nowrap shrink-0 cursor-pointer ${
                 isFollowing
                   ? 'bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200'
@@ -239,11 +265,21 @@ export function PostCard({
                   {onDeletePost && (
                     <button
                       type="button"
+                      disabled={deleting}
                       onClick={async () => {
+                        if (deleting) return;
                         setMenuOpen(false);
-                        await onDeletePost(post.id);
+                        setDeleting(true);
+                        setActionError(null);
+                        try {
+                          await onDeletePost(post.id);
+                        } catch (err: unknown) {
+                          setActionError(err instanceof Error ? err.message : 'Unable to delete post.');
+                        } finally {
+                          setDeleting(false);
+                        }
                       }}
-                      className="w-full px-4 py-2.5 text-left text-sm text-rose-600 dark:text-rose-400 flex items-center gap-2.5 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
+                      className="w-full px-4 py-2.5 text-left text-sm text-rose-600 dark:text-rose-400 flex items-center gap-2.5 hover:bg-rose-50 dark:hover:bg-rose-950/30 disabled:opacity-50 cursor-pointer"
                     >
                       <Trash2 className="w-4 h-4" />
                       <span>{t.feed.deletePost}</span>
@@ -315,7 +351,7 @@ export function PostCard({
           <div className="flex items-center gap-0.5">
             <button
               type="button"
-              onClick={() => onToggleLike(post)}
+              onClick={() => void runAction(() => onToggleLike(post), 'Unable to update like.')}
               aria-label={t.feed.like}
               className="min-h-[42px] min-w-[42px] rounded-full flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800/70 active:scale-90 transition-transform cursor-pointer"
             >
@@ -340,16 +376,22 @@ export function PostCard({
             <button
               type="button"
               onClick={() => onOpenShare(post)}
-              aria-label={t.feed.shareToDm}
-              className="min-h-[42px] min-w-[42px] rounded-full flex items-center justify-center text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors cursor-pointer"
+              aria-label={`${t.feed.shareToDm} (${sharesCount})`}
+              className="min-h-[42px] px-2.5 rounded-full inline-flex items-center gap-1.5 text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/70 active:scale-95 transition-all cursor-pointer"
             >
-              <Send className="w-5 h-5" />
+              <Send className="w-5 h-5 shrink-0" />
+              <span className="text-xs font-semibold tabular-nums">
+                {formatCount(sharesCount)}
+              </span>
+              <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                {sharesCount === 1 ? t.feed.shareSingular : t.feed.sharesLabel}
+              </span>
             </button>
           </div>
 
           <button
             type="button"
-            onClick={() => onToggleSave(post)}
+            onClick={() => void runAction(() => onToggleSave(post), 'Unable to update saved post.')}
             aria-label="Save post"
             className="min-h-[42px] min-w-[42px] rounded-full flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800/70 transition-colors cursor-pointer"
           >

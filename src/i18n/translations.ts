@@ -45,6 +45,8 @@ export interface Translations {
     addStory: string;
     likes: string;
     like: string;
+    shareSingular: string;
+    sharesLabel: string;
     viewComments: string;
     addComment: string;
     postComment: string;
@@ -206,6 +208,8 @@ export const TRANSLATIONS: Record<Language, Translations> = {
       addStory: 'Add story',
       likes: 'likes',
       like: 'like',
+      shareSingular: 'share',
+      sharesLabel: 'shares',
       viewComments: 'View all comments',
       addComment: 'Add a comment...',
       postComment: 'Post',
@@ -365,6 +369,8 @@ export const TRANSLATIONS: Record<Language, Translations> = {
       addStory: 'स्टोरी जोड़ें',
       likes: 'लाइक्स',
       like: 'लाइक',
+      shareSingular: 'शेयर',
+      sharesLabel: 'शेयर',
       viewComments: 'सभी टिप्पणियां देखें',
       addComment: 'टिप्पणी लिखें...',
       postComment: 'पोस्ट',
@@ -524,6 +530,8 @@ export const TRANSLATIONS: Record<Language, Translations> = {
       addStory: 'స్టోరీ జోడించండి',
       likes: 'లైక్‌లు',
       like: 'లైక్',
+      shareSingular: 'షేర్',
+      sharesLabel: 'షేర్లు',
       viewComments: 'అన్ని కామెంట్లను చూడండి',
       addComment: 'కామెంట్ రాయండి...',
       postComment: 'పోస్ట్',

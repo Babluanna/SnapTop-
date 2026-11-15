@@ -79,6 +79,7 @@ function ReelCard({
   const cardRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const tapTimerRef = useRef<number | null>(null);
+  const burstTimerRef = useRef<number | null>(null);
   const lastTapRef = useRef<number>(0);
 
   // Only play the currently visible reel in the vertical snap viewport
@@ -108,6 +109,9 @@ function ReelCard({
       if (tapTimerRef.current !== null) {
         window.clearTimeout(tapTimerRef.current);
       }
+      if (burstTimerRef.current !== null) {
+        window.clearTimeout(burstTimerRef.current);
+      }
     };
   }, []);
 
@@ -133,10 +137,16 @@ function ReelCard({
         tapTimerRef.current = null;
       }
       if (!isLiked) {
-        void onToggleLike(reel);
+        void onToggleLike(reel).catch(() => {});
       }
       setBurstHeart(true);
-      window.setTimeout(() => setBurstHeart(false), 750);
+      if (burstTimerRef.current !== null) {
+        window.clearTimeout(burstTimerRef.current);
+      }
+      burstTimerRef.current = window.setTimeout(() => {
+        setBurstHeart(false);
+        burstTimerRef.current = null;
+      }, 750);
     } else {
       tapTimerRef.current = window.setTimeout(() => {
         togglePlayback();
@@ -255,7 +265,7 @@ function ReelCard({
               <button
                 type="button"
                 onClick={() =>
-                  void onToggleFollow(reel.authorId, reel.authorUsername, reel.authorAvatar)
+                  void onToggleFollow(reel.authorId, reel.authorUsername, reel.authorAvatar).catch(() => {})
                 }
                 className={`px-3 py-1 rounded-lg text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                   isFollowing
@@ -311,7 +321,7 @@ function ReelCard({
         <div className="absolute bottom-5 right-2.5 z-20 flex flex-col items-center gap-4 text-white">
           <button
             type="button"
-            onClick={() => void onToggleLike(reel)}
+            onClick={() => void onToggleLike(reel).catch(() => {})}
             aria-label={t.feed.like}
             className="flex flex-col items-center gap-0.5 min-w-[44px] cursor-pointer active:scale-90 transition-transform"
           >
@@ -351,7 +361,7 @@ function ReelCard({
 
           <button
             type="button"
-            onClick={() => void onToggleSave(reel)}
+            onClick={() => void onToggleSave(reel).catch(() => {})}
             aria-label={isSaved ? t.reels.saved : t.reels.save}
             className="flex flex-col items-center gap-0.5 min-w-[44px] cursor-pointer active:scale-90 transition-transform"
           >

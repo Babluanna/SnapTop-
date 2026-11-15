@@ -39,13 +39,23 @@ export function StoryViewer({
   const [progress, setProgress] = useState(0);
   const [replyText, setReplyText] = useState('');
   const [sendingReply, setSendingReply] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [sentConfirm, setSentConfirm] = useState(false);
   const [replyError, setReplyError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const sentConfirmTimerRef = useRef<number | null>(null);
 
   const currentAuthorId = authorIds[authorIdx];
   const authorStories = stories.filter((s) => s.authorId === currentAuthorId);
   const activeStory = authorStories[slideIdx] || authorStories[0];
+
+  useEffect(() => {
+    return () => {
+      if (sentConfirmTimerRef.current !== null) {
+        window.clearTimeout(sentConfirmTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (activeStory) {
@@ -124,7 +134,13 @@ export function StoryViewer({
       );
       setReplyText('');
       setSentConfirm(true);
-      setTimeout(() => setSentConfirm(false), 2000);
+      if (sentConfirmTimerRef.current !== null) {
+        window.clearTimeout(sentConfirmTimerRef.current);
+      }
+      sentConfirmTimerRef.current = window.setTimeout(() => {
+        setSentConfirm(false);
+        sentConfirmTimerRef.current = null;
+      }, 2000);
     } catch (err: unknown) {
       setReplyError(err instanceof Error ? err.message : 'Could not send reply.');
     } finally {
@@ -213,12 +229,22 @@ export function StoryViewer({
               {activeStory.authorId === currentUid && onDeleteStory && (
                 <button
                   type="button"
+                  disabled={deleting}
                   onClick={async () => {
-                    await onDeleteStory(activeStory.id);
-                    onClose();
+                    if (deleting) return;
+                    setDeleting(true);
+                    setReplyError(null);
+                    try {
+                      await onDeleteStory(activeStory.id);
+                      onClose();
+                    } catch (err: unknown) {
+                      setReplyError(err instanceof Error ? err.message : 'Could not delete story.');
+                    } finally {
+                      setDeleting(false);
+                    }
                   }}
                   aria-label="Delete story"
-                  className="min-h-[38px] min-w-[38px] rounded-full text-white hover:bg-rose-500/40 flex items-center justify-center cursor-pointer"
+                  className="min-h-[38px] min-w-[38px] rounded-full text-white hover:bg-rose-500/40 disabled:opacity-50 flex items-center justify-center cursor-pointer"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

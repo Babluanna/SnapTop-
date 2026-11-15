@@ -565,15 +565,26 @@ export async function resolveMediaUrl(src: string): Promise<string> {
         }))
         .sort((a, b) => a.index - b.index);
 
+      if (sorted.length === 0) {
+        return '';
+      }
+
       const byteParts = sorted.map((c) => base64ToUint8(c.data));
       const blob = new Blob(byteParts, { type: mimeType });
+      if (blob.size === 0) {
+        return '';
+      }
       const blobUrl = URL.createObjectURL(blob);
       resolvedMediaCache.set(src, blobUrl);
       return blobUrl;
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes('permission-denied') || msg.includes('Missing or insufficient permissions')) {
-        handleFirestoreError(err, OperationType.LIST, `mediaFiles/${mediaId}/chunks`);
+        try {
+          handleFirestoreError(err, OperationType.LIST, `mediaFiles/${mediaId}/chunks`);
+        } catch {
+          // Logged via handleFirestoreError; return empty URL so UI falls back gracefully
+        }
       }
       return '';
     } finally {
@@ -585,37 +596,55 @@ export async function resolveMediaUrl(src: string): Promise<string> {
   return loadPromise;
 }
 
-export function useResolvedMediaUrl(src: string): string {
-  const [resolved, setResolved] = useState<string>(() => {
-    if (!src) return '';
-    if (!src.startsWith('snaptop-media://')) return src;
-    return resolvedMediaCache.get(src) || '';
+export function useResolvedMediaState(src: string): {
+  url: string;
+  loading: boolean;
+  error: boolean;
+} {
+  const [state, setState] = useState<{ url: string; loading: boolean; error: boolean }>(() => {
+    if (!src) return { url: '', loading: false, error: true };
+    if (!src.startsWith('snaptop-media://')) return { url: src, loading: false, error: false };
+    const cached = resolvedMediaCache.get(src);
+    return cached ? { url: cached, loading: false, error: false } : { url: '', loading: true, error: false };
   });
 
   useEffect(() => {
     if (!src) {
-      setResolved('');
+      setState({ url: '', loading: false, error: true });
       return;
     }
     if (!src.startsWith('snaptop-media://')) {
-      setResolved(src);
+      setState({ url: src, loading: false, error: false });
       return;
     }
     const cached = resolvedMediaCache.get(src);
     if (cached) {
-      setResolved(cached);
+      setState({ url: cached, loading: false, error: false });
       return;
     }
     let cancelled = false;
-    void resolveMediaUrl(src).then((url) => {
-      if (!cancelled) setResolved(url);
-    });
+    setState({ url: '', loading: true, error: false });
+    void resolveMediaUrl(src)
+      .then((url) => {
+        if (!cancelled) {
+          setState({ url, loading: false, error: !url });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setState({ url: '', loading: false, error: true });
+        }
+      });
     return () => {
       cancelled = true;
     };
   }, [src]);
 
-  return resolved;
+  return state;
+}
+
+export function useResolvedMediaUrl(src: string): string {
+  return useResolvedMediaState(src).url;
 }
 
 export async function uploadMediaFile(

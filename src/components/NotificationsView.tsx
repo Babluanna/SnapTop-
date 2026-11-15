@@ -58,7 +58,7 @@ export function NotificationsView({
         {unreadCount > 0 && (
           <button
             type="button"
-            onClick={onMarkAllRead}
+            onClick={() => void onMarkAllRead().catch(() => {})}
             className="min-h-[38px] px-3.5 rounded-full text-xs font-semibold text-violet-600 dark:text-violet-400 bg-violet-50 dark:bg-violet-950/40 hover:bg-violet-100 dark:hover:bg-violet-950/60 active:scale-[0.97] transition-all flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
           >
             <CheckCheck className="w-4 h-4" />
@@ -84,7 +84,13 @@ export function NotificationsView({
               key={n.id}
               type="button"
               onClick={async () => {
-                if (!n.isRead) await onMarkRead(n.id);
+                if (!n.isRead) {
+                  try {
+                    await onMarkRead(n.id);
+                  } catch {
+                    // Caller handles toast/logging; proceed to open profile cleanly
+                  }
+                }
                 onOpenProfile(n.actorId);
               }}
               className={`w-full px-4 py-3.5 flex items-center justify-between gap-3 text-left transition-colors cursor-pointer ${

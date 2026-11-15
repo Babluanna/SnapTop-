@@ -433,9 +433,14 @@ export function ProfileView({
             <>
               <button
                 type="button"
-                onClick={() =>
-                  void onToggleFollow(profile.uid, profile.username, profile.avatarUrl)
-                }
+                onClick={async () => {
+                  setActionError(null);
+                  try {
+                    await onToggleFollow(profile.uid, profile.username, profile.avatarUrl);
+                  } catch (err: unknown) {
+                    setActionError(err instanceof Error ? err.message : 'Unable to update follow status.');
+                  }
+                }}
                 className={`min-h-[38px] px-4 rounded-xl text-xs font-semibold transition-all active:scale-[0.98] whitespace-nowrap cursor-pointer ${
                   isFollowing
                     ? 'bg-zinc-100 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-200'

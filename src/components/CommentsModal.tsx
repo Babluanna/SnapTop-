@@ -159,7 +159,12 @@ export function CommentsModal({
               {onToggleLike && (
                 <button
                   type="button"
-                  onClick={() => void onToggleLike(post)}
+                  onClick={() => {
+                    setErrorMsg(null);
+                    void onToggleLike(post).catch((err: unknown) => {
+                      setErrorMsg(err instanceof Error ? err.message : 'Could not update like.');
+                    });
+                  }}
                   aria-label={t.feed.like}
                   className="min-h-[36px] px-2.5 rounded-full flex items-center gap-1 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs font-semibold tabular-nums cursor-pointer"
                 >
@@ -180,7 +185,12 @@ export function CommentsModal({
               {onToggleSave && (
                 <button
                   type="button"
-                  onClick={() => void onToggleSave(post)}
+                  onClick={() => {
+                    setErrorMsg(null);
+                    void onToggleSave(post).catch((err: unknown) => {
+                      setErrorMsg(err instanceof Error ? err.message : 'Could not update saved post.');
+                    });
+                  }}
                   aria-label="Save post"
                   className="min-h-[36px] min-w-[36px] rounded-full flex items-center justify-center hover:bg-zinc-100 dark:hover:bg-zinc-800 cursor-pointer"
                 >

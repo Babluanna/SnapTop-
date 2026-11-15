@@ -345,17 +345,24 @@ export default function App() {
   }, [language]);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => {
-      setFirebaseUser(user);
-      setAuthReady(true);
-      if (!user) {
-        setCurrentProfile(null);
-        setProfileReady(false);
-        setProfileLoadError(null);
+    const unsub = onAuthStateChanged(
+      auth,
+      (user) => {
+        setFirebaseUser(user);
+        setAuthReady(true);
+        if (!user) {
+          setCurrentProfile(null);
+          setProfileReady(false);
+          setProfileLoadError(null);
+        }
+      },
+      (err) => {
+        setAuthReady(true);
+        notifyError(err, 'Unable to check authentication session. Please reload.');
       }
-    });
+    );
     return unsub;
-  }, []);
+  }, [notifyError]);
 
   useEffect(() => {
     if (!authReady || !firebaseUser || !firebaseUser.emailVerified) return;

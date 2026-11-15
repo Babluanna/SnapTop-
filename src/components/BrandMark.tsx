@@ -1,5 +1,5 @@
 import React, { forwardRef, useEffect, useState } from 'react';
-import { useResolvedMediaUrl } from '../lib/firebase';
+import { useResolvedMediaState, useResolvedMediaUrl } from '../lib/firebase';
 import type { PublicProfile } from '../types';
 
 /**
@@ -138,10 +138,15 @@ export interface ResolvedVideoProps extends React.VideoHTMLAttributes<HTMLVideoE
 }
 
 export const ResolvedVideo = forwardRef<HTMLVideoElement, ResolvedVideoProps>(
-  function ResolvedVideo({ src, className = '', ...rest }, ref) {
-    const resolvedSrc = useResolvedMediaUrl(src);
+  function ResolvedVideo({ src, className = '', onError, ...rest }, ref) {
+    const { url: resolvedSrc, loading, error } = useResolvedMediaState(src);
+    const [playbackFailed, setPlaybackFailed] = useState(false);
 
-    if (!resolvedSrc) {
+    useEffect(() => {
+      setPlaybackFailed(false);
+    }, [resolvedSrc, src]);
+
+    if (loading) {
       return (
         <div className={`flex items-center justify-center bg-zinc-900 text-zinc-400 ${className}`}>
           <div className="w-6 h-6 rounded-full border-2 border-zinc-600 border-t-white animate-spin" />
@@ -149,7 +154,27 @@ export const ResolvedVideo = forwardRef<HTMLVideoElement, ResolvedVideoProps>(
       );
     }
 
-    return <video ref={ref} src={resolvedSrc} className={className} {...rest} />;
+    if (error || playbackFailed || !resolvedSrc) {
+      return (
+        <div className={`flex flex-col items-center justify-center bg-zinc-900 text-zinc-400 p-6 text-center ${className}`}>
+          <SnapTopLogo size={32} />
+          <p className="mt-2.5 text-xs font-medium text-zinc-400">Video unavailable</p>
+        </div>
+      );
+    }
+
+    return (
+      <video
+        ref={ref}
+        src={resolvedSrc}
+        onError={(e) => {
+          setPlaybackFailed(true);
+          onError?.(e);
+        }}
+        className={className}
+        {...rest}
+      />
+    );
   }
 );
 
