@@ -111,18 +111,38 @@ function makeSafeUsername(raw: string, uid: string): string {
   return `snap_${uid.slice(0, 6)}`;
 }
 
+function safeStorageGet(key: string): string | null {
+  try {
+    return typeof window !== 'undefined' && window.localStorage ? window.localStorage.getItem(key) : null;
+  } catch {
+    return null;
+  }
+}
+
+function safeStorageSet(key: string, value: string): void {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.setItem(key, value);
+    }
+  } catch {
+    // Ignore storage quota or private-mode restrictions
+  }
+}
+
 export default function App() {
   const [authReady, setAuthReady] = useState(false);
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
   const [profileReady, setProfileReady] = useState(false);
+  const [profileLoadError, setProfileLoadError] = useState<string | null>(null);
+  const [profileRetryNonce, setProfileRetryNonce] = useState(0);
   const [currentProfile, setCurrentProfile] = useState<PublicProfile | null>(null);
 
   const [language, setLanguage] = useState<Language>(() => {
-    const saved = localStorage.getItem('snaptop_lang');
+    const saved = safeStorageGet('snaptop_lang');
     return saved === 'hi' || saved === 'te' ? saved : 'en';
   });
   const [theme, setTheme] = useState<ThemeMode>(() => {
-    const saved = localStorage.getItem('snaptop_theme');
+    const saved = safeStorageGet('snaptop_theme');
     return saved === 'dark' ? 'dark' : 'light';
   });
 
@@ -305,7 +325,7 @@ export default function App() {
   useEffect(() => {
     const root = document.documentElement;
     const isDark = theme === 'dark';
-    localStorage.setItem('snaptop_theme', theme);
+    safeStorageSet('snaptop_theme', theme);
 
     if (!hasMountedThemeRef.current) {
       hasMountedThemeRef.current = true;
@@ -321,7 +341,7 @@ export default function App() {
   }, [theme, runThemeViewTransition]);
 
   useEffect(() => {
-    localStorage.setItem('snaptop_lang', language);
+    safeStorageSet('snaptop_lang', language);
   }, [language]);
 
   useEffect(() => {
@@ -331,6 +351,7 @@ export default function App() {
       if (!user) {
         setCurrentProfile(null);
         setProfileReady(false);
+        setProfileLoadError(null);
       }
     });
     return unsub;
@@ -409,18 +430,32 @@ export default function App() {
             isVerified: Boolean(d.isVerified),
             createdAtMs: d.createdAt?.toMillis?.() || Date.now(),
           });
+          setProfileLoadError(null);
           setProfileReady(true);
         }
       } catch (err) {
-        handleFirestoreError(err, OperationType.WRITE, `publicProfiles/${user.uid}`);
+        try {
+          handleFirestoreError(err, OperationType.WRITE, `publicProfiles/${user.uid}`);
+        } catch (logged) {
+          if (!cancelled) {
+            const msg = logged instanceof Error ? logged.message : String(logged);
+            try {
+              const parsed = JSON.parse(msg) as { error?: string };
+              setProfileLoadError(parsed.error || 'Could not load your profile from Firestore.');
+            } catch {
+              setProfileLoadError(msg || 'Could not load your profile from Firestore.');
+            }
+          }
+        }
       }
     }
 
-    ensureUserDocs(firebaseUser);
+    setProfileLoadError(null);
+    void ensureUserDocs(firebaseUser);
     return () => {
       cancelled = true;
     };
-  }, [authReady, firebaseUser?.uid, firebaseUser?.emailVerified]);
+  }, [authReady, firebaseUser?.uid, firebaseUser?.emailVerified, profileRetryNonce]);
 
   useEffect(() => {
     if (!authReady || !firebaseUser || !firebaseUser.emailVerified || !profileReady) return;
@@ -450,7 +485,13 @@ export default function App() {
         const me = list.find((p) => p.uid === uid);
         if (me) setCurrentProfile(me);
       },
-      (err) => handleFirestoreError(err, OperationType.LIST, 'publicProfiles')
+      (err) => {
+        try {
+          handleFirestoreError(err, OperationType.LIST, 'publicProfiles');
+        } catch (logged) {
+          notifyError(logged, 'Unable to load profiles.');
+        }
+      }
     );
 
     const unsubPosts = onSnapshot(
@@ -461,7 +502,13 @@ export default function App() {
           .sort((a, b) => b.createdAtMs - a.createdAtMs);
         setAllPosts(list);
       },
-      (err) => handleFirestoreError(err, OperationType.LIST, 'posts')
+      (err) => {
+        try {
+          handleFirestoreError(err, OperationType.LIST, 'posts');
+        } catch (logged) {
+          notifyError(logged, 'Unable to load posts.');
+        }
+      }
     );
 
     const unsubStories = onSnapshot(
@@ -472,7 +519,13 @@ export default function App() {
           .sort((a, b) => b.createdAtMs - a.createdAtMs);
         setAllStories(list);
       },
-      (err) => handleFirestoreError(err, OperationType.LIST, 'stories')
+      (err) => {
+        try {
+          handleFirestoreError(err, OperationType.LIST, 'stories');
+        } catch (logged) {
+          notifyError(logged, 'Unable to load stories.');
+        }
+      }
     );
 
     const unsubLikes = onSnapshot(
@@ -480,7 +533,13 @@ export default function App() {
       (snap) => {
         setLikedPostIds(new Set(snap.docs.map((d) => d.data().postId as string)));
       },
-      (err) => handleFirestoreError(err, OperationType.LIST, 'postLikes')
+      (err) => {
+        try {
+          handleFirestoreError(err, OperationType.LIST, 'postLikes');
+        } catch (logged) {
+          notifyError(logged, 'Unable to sync likes.');
+        }
+      }
     );
 
     const unsubSaved = onSnapshot(
@@ -509,7 +568,13 @@ export default function App() {
         });
         setSavedPostMap(map);
       },
-      (err) => handleFirestoreError(err, OperationType.LIST, 'savedPosts')
+      (err) => {
+        try {
+          handleFirestoreError(err, OperationType.LIST, 'savedPosts');
+        } catch (logged) {
+          notifyError(logged, 'Unable to sync saved posts.');
+        }
+      }
     );
 
     const unsubFollows = onSnapshot(
@@ -517,7 +582,13 @@ export default function App() {
       (snap) => {
         setFollowingIds(new Set(snap.docs.map((d) => d.data().followingId as string)));
       },
-      (err) => handleFirestoreError(err, OperationType.LIST, 'follows')
+      (err) => {
+        try {
+          handleFirestoreError(err, OperationType.LIST, 'follows');
+        } catch (logged) {
+          notifyError(logged, 'Unable to sync following.');
+        }
+      }
     );
 
     const unsubNotifs = onSnapshot(
@@ -543,7 +614,13 @@ export default function App() {
           .sort((a, b) => b.createdAtMs - a.createdAtMs);
         setNotifications(list);
       },
-      (err) => handleFirestoreError(err, OperationType.LIST, 'notifications')
+      (err) => {
+        try {
+          handleFirestoreError(err, OperationType.LIST, 'notifications');
+        } catch (logged) {
+          notifyError(logged, 'Unable to load notifications.');
+        }
+      }
     );
 
     const unsubNotes = onSnapshot(
@@ -565,7 +642,13 @@ export default function App() {
           .sort((a, b) => b.updatedAtMs - a.updatedAtMs);
         setNotes(list);
       },
-      (err) => handleFirestoreError(err, OperationType.LIST, 'notes')
+      (err) => {
+        try {
+          handleFirestoreError(err, OperationType.LIST, 'notes');
+        } catch (logged) {
+          notifyError(logged, 'Unable to load status notes.');
+        }
+      }
     );
 
     return () => {
@@ -697,7 +780,7 @@ export default function App() {
   const handleToggleTheme = async () => {
     const next: ThemeMode = theme === 'dark' ? 'light' : 'dark';
     const isDark = next === 'dark';
-    localStorage.setItem('snaptop_theme', next);
+    safeStorageSet('snaptop_theme', next);
     runThemeViewTransition(isDark, () => {
       flushSync(() => {
         setTheme(next);
@@ -1281,7 +1364,7 @@ export default function App() {
     );
   }
 
-  if (!firebaseUser || !firebaseUser.emailVerified || !currentProfile) {
+  if (!firebaseUser || !firebaseUser.emailVerified) {
     return (
       <AuthScreen
         language={language}
@@ -1291,6 +1374,52 @@ export default function App() {
         pendingUser={firebaseUser}
         onProfileSeedHint={(displayName, username) => setSeedHint({ displayName, username })}
       />
+    );
+  }
+
+  if (!currentProfile) {
+    if (profileLoadError) {
+      return (
+        <div className="min-h-screen bg-white dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 flex items-center justify-center p-6">
+          <div className="max-w-sm w-full rounded-[28px] border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 p-6 text-center space-y-4">
+            <div className="flex justify-center">
+              <SnapTopLogo size={38} />
+            </div>
+            <h1 className="font-display text-base font-bold">Could not load your profile</h1>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 break-words leading-relaxed">
+              {profileLoadError}
+            </p>
+            <div className="flex items-center justify-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setProfileLoadError(null);
+                  setProfileRetryNonce((n) => n + 1);
+                }}
+                className="min-h-[40px] px-4 rounded-full bg-gradient-to-r from-violet-600 to-pink-500 text-white text-xs font-semibold cursor-pointer"
+              >
+                Retry
+              </button>
+              <button
+                type="button"
+                onClick={() => void signOut(auth)}
+                className="min-h-[40px] px-4 rounded-full bg-zinc-200 dark:bg-zinc-800 text-xs font-semibold cursor-pointer"
+              >
+                {t.nav.signOut}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="min-h-screen bg-white dark:bg-zinc-950 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <SnapTopLogo size={42} />
+          <Loader2 className="w-5 h-5 animate-spin text-violet-600 dark:text-violet-400" />
+        </div>
+      </div>
     );
   }
 

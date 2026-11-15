@@ -79,7 +79,13 @@ export function MessagesView({
         list.sort((a, b) => b.updatedAtMs - a.updatedAtMs);
         setConversations(list);
       },
-      (err) => handleFirestoreError(err, OperationType.LIST, path)
+      (err) => {
+        try {
+          handleFirestoreError(err, OperationType.LIST, path);
+        } catch (logged) {
+          setErrorMsg(logged instanceof Error ? logged.message : 'Unable to load conversations.');
+        }
+      }
     );
     return unsub;
   }, [currentProfile.uid]);
@@ -119,7 +125,13 @@ export function MessagesView({
           60
         );
       },
-      (err) => handleFirestoreError(err, OperationType.LIST, path)
+      (err) => {
+        try {
+          handleFirestoreError(err, OperationType.LIST, path);
+        } catch (logged) {
+          setErrorMsg(logged instanceof Error ? logged.message : 'Unable to load messages.');
+        }
+      }
     );
     return () => {
       if (scrollTimer !== undefined) window.clearTimeout(scrollTimer);
@@ -256,8 +268,11 @@ export function MessagesView({
       await batch.commit();
       setDraft('');
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Unable to send message.');
-      handleFirestoreError(err, OperationType.WRITE, `conversations/${activeConv.id}/messages`);
+      try {
+        handleFirestoreError(err, OperationType.WRITE, `conversations/${activeConv.id}/messages`);
+      } catch (logged) {
+        setErrorMsg(logged instanceof Error ? logged.message : 'Unable to send message.');
+      }
     } finally {
       setSending(false);
     }

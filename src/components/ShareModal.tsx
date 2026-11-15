@@ -27,7 +27,7 @@ export function ShareModal({
   const [sendingUid, setSendingUid] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const shareUrl = `${window.location.origin}/?post=${encodeURIComponent(post.id)}`;
+  const shareUrl = `${window.location.origin}${window.location.pathname}?post=${encodeURIComponent(post.id)}`;
   const candidates = creators.filter((c) => c.uid !== currentUid);
 
   const handleCopy = async () => {

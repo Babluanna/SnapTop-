@@ -64,7 +64,13 @@ export function CommentsModal({
             .sort((a, b) => a.createdAtMs - b.createdAtMs)
         );
       },
-      (err) => handleFirestoreError(err, OperationType.LIST, path)
+      (err) => {
+        try {
+          handleFirestoreError(err, OperationType.LIST, path);
+        } catch (logged) {
+          setErrorMsg(logged instanceof Error ? logged.message : 'Unable to load comments.');
+        }
+      }
     );
     return unsub;
   }, [post.id]);
@@ -90,8 +96,11 @@ export function CommentsModal({
     try {
       await deleteDoc(doc(db, path));
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Could not delete comment.');
-      handleFirestoreError(err, OperationType.DELETE, path);
+      try {
+        handleFirestoreError(err, OperationType.DELETE, path);
+      } catch (logged) {
+        setErrorMsg(logged instanceof Error ? logged.message : 'Could not delete comment.');
+      }
     }
   };
 

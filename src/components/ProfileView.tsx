@@ -100,7 +100,7 @@ export function ProfileView({
     tab === 'posts' ? userPosts : tab === 'reels' ? reelPosts : savedPosts;
 
   const handleShareProfile = async () => {
-    const url = `${window.location.origin}/?user=${encodeURIComponent(profile.username)}`;
+    const url = `${window.location.origin}${window.location.pathname}?user=${encodeURIComponent(profile.username)}`;
     try {
       await navigator.clipboard.writeText(url);
     } catch {

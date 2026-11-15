@@ -48,8 +48,16 @@ export function AuthScreen({
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Unable to sign in with Google.';
-      setErrorMsg(msg);
+      const code = (err as { code?: string })?.code || '';
+      if (code === 'auth/unauthorized-domain') {
+        const host = typeof window !== 'undefined' ? window.location.hostname : 'this domain';
+        setErrorMsg(
+          `Add "${host}" to Firebase Console -> Authentication -> Settings -> Authorized domains to enable Google sign-in here, or sign in with Email/Password below.`
+        );
+      } else {
+        const msg = err instanceof Error ? err.message : 'Unable to sign in with Google.';
+        setErrorMsg(msg);
+      }
     } finally {
       setLoading(false);
     }
